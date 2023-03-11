@@ -41,22 +41,27 @@ docker_create_db_directories() {
 	chmod 700 "$PGDATA" || :
 
 	# ignore failure since it will be fine when using the image provided directory; see also https://github.com/docker-library/postgres/pull/289
-	mkdir -p /var/run/postgresql || :
-	chmod 775 /var/run/postgresql || :
+	## 注释掉下面两行，不需要在这下面创建unix套接字
+	#mkdir -p /var/run/postgresql || :
+	#chmod 775 /var/run/postgresql || :
 
 	# Create the transaction log directory before initdb is run so the directory is owned by the correct user
+	## 这里的用户postgres改为highgo，操作系统用户创建的是highgo
 	if [ -n "${POSTGRES_INITDB_WALDIR:-}" ]; then
 		mkdir -p "$POSTGRES_INITDB_WALDIR"
 		if [ "$user" = '0' ]; then
-			find "$POSTGRES_INITDB_WALDIR" \! -user postgres -exec chown postgres '{}' +
+			find "$POSTGRES_INITDB_WALDIR" \! -user highgo -exec chown highgo '{}' +
 		fi
 		chmod 700 "$POSTGRES_INITDB_WALDIR"
 	fi
 
 	# allow the container to be started with `--user`
 	if [ "$user" = '0' ]; then
-		find "$PGDATA" \! -user postgres -exec chown postgres '{}' +
-		find /var/run/postgresql \! -user postgres -exec chown postgres '{}' +
+		find "$PGDATA" \! -user highgo -exec chown highgo '{}' +
+	## 注释掉下面，并添加两行
+	#	find /var/run/postgresql \! -user postgres -exec chown postgres '{}' +
+		chown -R highgo:highgo /opt/highgo
+		chown -R highgo:highgo /home/highgo
 	fi
 }
 
@@ -77,8 +82,9 @@ docker_init_database_dir() {
 				NSS_WRAPPER_GROUP="$(mktemp)"
 				export LD_PRELOAD="$wrapper" NSS_WRAPPER_PASSWD NSS_WRAPPER_GROUP
 				local gid; gid="$(id -g)"
-				printf 'postgres:x:%s:%s:PostgreSQL:%s:/bin/false\n' "$uid" "$gid" "$PGDATA" > "$NSS_WRAPPER_PASSWD"
-				printf 'postgres:x:%s:\n' "$gid" > "$NSS_WRAPPER_GROUP"
+				## 修改postgres为highgo用户，修改用户注释为HighgoDatabase
+				printf 'highgo:x:%s:%s:HighgoDatabase:%s:/bin/false\n' "$uid" "$gid" "$PGDATA" > "$NSS_WRAPPER_PASSWD"
+				printf 'highgo:x:%s:\n' "$gid" > "$NSS_WRAPPER_GROUP"
 				break
 			fi
 		done
@@ -89,7 +95,16 @@ docker_init_database_dir() {
 	fi
 
 	# --pwfile refuses to handle a properly-empty file (hence the "\n"): https://github.com/docker-library/postgres/issues/1025
-	eval 'initdb --username="$POSTGRES_USER" --pwfile=<(printf "%s\n" "$POSTGRES_PASSWORD") '"$POSTGRES_INITDB_ARGS"' "$@"'
+	## 瀚高数据库需要3个用户密码，创建密码文件，然后执行初始化命令
+	local passwords_file; passwords_file=$(mktemp)
+	echo "Hello@123456" > ${passwords_file}
+	echo "Hello@123456" >> ${passwords_file}
+	echo "Hello@123456" >> ${passwords_file}
+	eval 'initdb --pwfile=${passwords_file} '"$POSTGRES_INITDB_ARGS"' "$@"'
+	mv /home/highgo/root.crt "$PGDATA"
+	mv /home/highgo/server.* "$PGDATA"
+	## 注释掉原有的eval命令，这个是创建用户，瀚高数据库不需要
+	# eval 'initdb --username="$POSTGRES_USER" --pwfile=<(printf "%s\n" "$POSTGRES_PASSWORD") '"$POSTGRES_INITDB_ARGS"' "$@"'
 
 	# unset/cleanup "nss_wrapper" bits
 	if [[ "${LD_PRELOAD:-}" == */libnss_wrapper.so ]]; then
@@ -199,15 +214,16 @@ docker_process_sql() {
 
 # create initial database
 # uses environment variables for input: POSTGRES_DB
+## 修改默认dbname为highgo，其实这里根本没必要，瀚高数据库是固定的默认库，除非你是打算自己额外建个库
 docker_setup_db() {
 	local dbAlreadyExists
 	dbAlreadyExists="$(
-		POSTGRES_DB= docker_process_sql --dbname postgres --set db="$POSTGRES_DB" --tuples-only <<-'EOSQL'
+		POSTGRES_DB= docker_process_sql --dbname highgo --set db="$POSTGRES_DB" --tuples-only <<-'EOSQL'
 			SELECT 1 FROM pg_database WHERE datname = :'db' ;
 		EOSQL
 	)"
 	if [ -z "$dbAlreadyExists" ]; then
-		POSTGRES_DB= docker_process_sql --dbname postgres --set db="$POSTGRES_DB" <<-'EOSQL'
+		POSTGRES_DB= docker_process_sql --dbname highgo --set db="$POSTGRES_DB" <<-'EOSQL'
 			CREATE DATABASE :"db" ;
 		EOSQL
 		printf '\n'
@@ -216,10 +232,11 @@ docker_setup_db() {
 
 # Loads various settings that are used elsewhere in the script
 # This should be called before any other functions
+## 将默认用户改为highgo，其实也没啥用，数据库和用户都是固定的，不会让我们随便改
 docker_setup_env() {
 	file_env 'POSTGRES_PASSWORD'
 
-	file_env 'POSTGRES_USER' 'postgres'
+	file_env 'POSTGRES_USER' 'highgo'
 	file_env 'POSTGRES_DB' "$POSTGRES_USER"
 	file_env 'POSTGRES_INITDB_ARGS'
 	: "${POSTGRES_HOST_AUTH_METHOD:=}"
@@ -255,6 +272,7 @@ pg_setup_hba_conf() {
 
 # start socket-only postgresql server for setting up or running scripts
 # all arguments will be passed along as arguments to `postgres` (via pg_ctl)
+## 修改默认端口号5866
 docker_temp_server_start() {
 	if [ "$1" = 'postgres' ]; then
 		shift
@@ -262,7 +280,7 @@ docker_temp_server_start() {
 
 	# internal start of server in order to allow setup using psql client
 	# does not listen on external TCP/IP and waits until start finishes
-	set -- "$@" -c listen_addresses='' -p "${PGPORT:-5432}"
+	set -- "$@" -c listen_addresses='' -p "${PGPORT:-5866}"
 
 	PGUSER="${PGUSER:-$POSTGRES_USER}" \
 	pg_ctl -D "$PGDATA" \
@@ -271,8 +289,9 @@ docker_temp_server_start() {
 }
 
 # stop postgresql server after done setting up user and running scripts
+## 修改默认用户名：highgo
 docker_temp_server_stop() {
-	PGUSER="${PGUSER:-postgres}" \
+	PGUSER="${PGUSER:-highgo}" \
 	pg_ctl -D "$PGDATA" -m fast -w stop
 }
 
@@ -293,6 +312,16 @@ _pg_want_help() {
 	return 1
 }
 
+## 添加一个新函数
+## 加载授权，要将授权放到“$PGDATA”目录下，且文件名为“hgdb.lic”
+hg_load_lic(){
+	local file_hgdblic; file_hgdblic="${PGDATA}/hgdb.lic"
+	if [ -s "${file_hgdblic}" ]; then
+		chmod 0600 ${file_hgdblic}
+		hg_lic -c -F ${file_hgdblic}
+		hg_lic -l -F ${file_hgdblic}
+	fi
+}
 _main() {
 	# if first arg looks like a flag, assume we want to run postgres server
 	if [ "${1:0:1}" = '-' ]; then
@@ -305,12 +334,14 @@ _main() {
 		docker_create_db_directories
 		if [ "$(id -u)" = '0' ]; then
 			# then restart script as postgres user
-			exec gosu postgres "$BASH_SOURCE" "$@"
+			## 修改为 highgo，因为构建时创建的是用户名 highgo
+			exec gosu highgo "$BASH_SOURCE" "$@"
 		fi
 
 		# only run initialization on an empty data directory
 		if [ -z "$DATABASE_ALREADY_EXISTS" ]; then
-			docker_verify_minimum_env
+			## 不验证，瀚高库会验证密码
+			#docker_verify_minimum_env
 
 			# check dir permissions to reduce likelihood of half-initialized database
 			ls /docker-entrypoint-initdb.d/ > /dev/null
@@ -323,7 +354,8 @@ _main() {
 			export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
 			docker_temp_server_start "$@"
 
-			docker_setup_db
+			## 不需要创建默认库
+			#docker_setup_db
 			docker_process_init_files /docker-entrypoint-initdb.d/*
 
 			docker_temp_server_stop
@@ -335,6 +367,9 @@ _main() {
 
 			EOM
 		else
+			## 如果目录不是空，那就加载一下授权，必须要保证容器不会因为授权到期而无法重新利用，这样通过PGDATA下的授权文件hgdb.lic来保障了。
+			hg_load_lic
+
 			cat <<-'EOM'
 
 				PostgreSQL Database directory appears to contain a database; Skipping initialization
@@ -343,7 +378,14 @@ _main() {
 		fi
 	fi
 
-	exec "$@"
+	## 由于瀚高数据库v4.5.8的问题，直接使用postgres启动数据库，授权文件不生效
+	## 所以，这里去掉开头的postgres，使用一个完整路径的postgres命令来启动，就可以生效了
+	if [ "$1" = 'postgres' ]; then
+		shift
+	fi
+	
+	exec ${HGDB_HOME}/bin/postgres "$@"
+	#exec "$@"
 }
 
 if ! _is_sourced; then

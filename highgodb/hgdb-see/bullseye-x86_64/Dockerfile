@@ -16,15 +16,13 @@ RUN set -ex; \
 		rm -rf /var/lib/apt/lists/*; \
 	fi
 
-# explicitly set user/group IDs
+# 明确设置“用户”和“组”ID
+# 创建用户目录
 RUN set -eux; \
-	groupadd -r postgres --gid=999; \
-# https://salsa.debian.org/postgresql/postgresql-common/blob/997d842ee744687d99a2b2d95c1083a2615c79e8/debian/postgresql-common.postinst#L32-35
-	useradd -r -g postgres --uid=999 --home-dir=/var/lib/postgresql --shell=/bin/bash postgres; \
-# also create the postgres user's home directory with appropriate permissions
-# see https://github.com/docker-library/postgres/issues/274
-	mkdir -p /var/lib/postgresql; \
-	chown -R postgres:postgres /var/lib/postgresql
+	groupadd -r highgo --gid=999; \
+	useradd -r -g highgo --uid=999 --home-dir=/home/highgo --shell=/bin/bash highgo; \
+	mkdir -p /home/highgo; \
+	chown -R highgo:highgo /home/highgo
 
 # grab gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
@@ -72,151 +70,44 @@ RUN set -eux; \
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-RUN set -ex; \
-# pub   4096R/ACCC4CF8 2011-10-13 [expires: 2019-07-02]
-#       Key fingerprint = B97B 0AFC AA1A 47F0 44F2  44A0 7FCC 7D46 ACCC 4CF8
-# uid                  PostgreSQL Debian Repository
-	key='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8'; \
-	export GNUPGHOME="$(mktemp -d)"; \
-	mkdir -p /usr/local/share/keyrings/; \
-	gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
-	gpg --batch --export --armor "$key" > /usr/local/share/keyrings/postgres.gpg.asc; \
-	command -v gpgconf > /dev/null && gpgconf --kill all; \
-	rm -rf "$GNUPGHOME"
+# 设置瀚高数据库版本、环境变量以及安装
+ENV HG_VERSION=hgdb-see-4.5.8
+ENV HGDB_HOME=/opt/highgo/${HG_VERSION}
+ENV PATH=$PATH:${HGDB_HOME}/bin
+ENV PGDATA=/home/highgo/hgdb/data
 
-ENV PG_MAJOR 15
-ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin
+# 添加瀚高数据库程序压缩包
+ADD hgdb-see-4.5.8.tar.gz /
 
-ENV PG_VERSION 15.2-1.pgdg110+1
+# 添加 ssl 证书文件并修改权限，因为镜像里没有 openssl 命令，无法创建它们。
+COPY --from=qiuchenjun/hgdb-crts /root.crt /server.* /home/highgo/
+RUN chown -R highgo:highgo /home/highgo/root.crt; \
+	chown -R highgo:highgo /home/highgo/server.*; \
+	chmod 0600 /home/highgo/server.key
 
-RUN set -ex; \
-	\
-# see note below about "*.pyc" files
-	export PYTHONDONTWRITEBYTECODE=1; \
-	\
-	dpkgArch="$(dpkg --print-architecture)"; \
-	aptRepo="[ signed-by=/usr/local/share/keyrings/postgres.gpg.asc ] http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main $PG_MAJOR"; \
-	case "$dpkgArch" in \
-		amd64 | arm64 | ppc64el) \
-# arches officialy built by upstream
-			echo "deb $aptRepo" > /etc/apt/sources.list.d/pgdg.list; \
-			apt-get update; \
-			;; \
-		*) \
-# we're on an architecture upstream doesn't officially build for
-# let's build binaries from their published source packages
-			echo "deb-src $aptRepo" > /etc/apt/sources.list.d/pgdg.list; \
-			\
-			savedAptMark="$(apt-mark showmanual)"; \
-			\
-			tempDir="$(mktemp -d)"; \
-			cd "$tempDir"; \
-			\
-# create a temporary local APT repo to install from (so that dependency resolution can be handled by APT, as it should be)
-			apt-get update; \
-			apt-get install -y --no-install-recommends dpkg-dev; \
-			echo "deb [ trusted=yes ] file://$tempDir ./" > /etc/apt/sources.list.d/temp.list; \
-			_update_repo() { \
-				dpkg-scanpackages . > Packages; \
-# work around the following APT issue by using "Acquire::GzipIndexes=false" (overriding "/etc/apt/apt.conf.d/docker-gzip-indexes")
-#   Could not open file /var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages - open (13: Permission denied)
-#   ...
-#   E: Failed to fetch store:/var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages  Could not open file /var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages - open (13: Permission denied)
-				apt-get -o Acquire::GzipIndexes=false update; \
-			}; \
-			_update_repo; \
-			\
-# build .deb files from upstream's source packages (which are verified by apt-get)
-			nproc="$(nproc)"; \
-			export DEB_BUILD_OPTIONS="nocheck parallel=$nproc"; \
-# we have to build postgresql-common first because postgresql-$PG_MAJOR shares "debian/rules" logic with it: https://salsa.debian.org/postgresql/postgresql/-/commit/99f44476e258cae6bf9e919219fa2c5414fa2876
-# (and it "Depends: pgdg-keyring")
-			apt-get build-dep -y postgresql-common pgdg-keyring; \
-			apt-get source --compile postgresql-common pgdg-keyring; \
-			_update_repo; \
-			apt-get build-dep -y "postgresql-$PG_MAJOR=$PG_VERSION"; \
-			apt-get source --compile "postgresql-$PG_MAJOR=$PG_VERSION"; \
-			\
-# we don't remove APT lists here because they get re-downloaded and removed later
-			\
-# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-# (which is done after we install the built packages so we don't have to redownload any overlapping dependencies)
-			apt-mark showmanual | xargs apt-mark auto > /dev/null; \
-			apt-mark manual $savedAptMark; \
-			\
-			ls -lAFh; \
-			_update_repo; \
-			grep '^Package: ' Packages; \
-			cd /; \
-			;; \
-	esac; \
-	\
-	apt-get install -y --no-install-recommends postgresql-common; \
-	sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf; \
-	apt-get install -y --no-install-recommends \
-		"postgresql-$PG_MAJOR=$PG_VERSION" \
-	; \
-	\
-	rm -rf /var/lib/apt/lists/*; \
-	\
-	if [ -n "$tempDir" ]; then \
-# if we have leftovers from building, let's purge them (including extra, unnecessary build deps)
-		apt-get purge -y --auto-remove; \
-		rm -rf "$tempDir" /etc/apt/sources.list.d/temp.list; \
-	fi; \
-	\
-# some of the steps above generate a lot of "*.pyc" files (and setting "PYTHONDONTWRITEBYTECODE" beforehand doesn't propagate properly for some reason), so we clean them up manually (as long as they aren't owned by a package)
-	find /usr -name '*.pyc' -type f -exec bash -c 'for pyc; do dpkg -S "$pyc" &> /dev/null || rm -vf "$pyc"; done' -- '{}' +; \
-	\
-	postgres --version
+# 查看输出版本
+RUN postgres --version
 
-# make the sample config easier to munge (and "correct by default")
+# 修改默认配置，监听所有IP，否则宿主机无法访问端口
 RUN set -eux; \
-	dpkg-divert --add --rename --divert "/usr/share/postgresql/postgresql.conf.sample.dpkg" "/usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample"; \
-	cp -v /usr/share/postgresql/postgresql.conf.sample.dpkg /usr/share/postgresql/postgresql.conf.sample; \
-	ln -sv ../postgresql.conf.sample "/usr/share/postgresql/$PG_MAJOR/"; \
-	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/share/postgresql/postgresql.conf.sample; \
-	grep -F "listen_addresses = '*'" /usr/share/postgresql/postgresql.conf.sample
+	sed -ri "s/^#?(listen_addresses)\s*=\s*\S+.*/\1 = '*'/" ${HGDB_HOME}/share/postgresql/postgresql.conf.sample; \
+	grep -F "listen_addresses = '*'" ${HGDB_HOME}/share/postgresql/postgresql.conf.sample
 
-RUN mkdir -p /var/run/postgresql && chown -R postgres:postgres /var/run/postgresql && chmod 2777 /var/run/postgresql
+# 创建数据目录并授权
+RUN mkdir -p "$PGDATA" && chown -R highgo:highgo "$PGDATA" && chmod 777 "$PGDATA"
+# 映射到宿主机的目录
+VOLUME /home/highgo/hgdb
 
-ENV PGDATA /var/lib/postgresql/data
-# this 777 will be replaced by 700 at runtime (allows semi-arbitrary "--user" values)
-RUN mkdir -p "$PGDATA" && chown -R postgres:postgres "$PGDATA" && chmod 777 "$PGDATA"
-VOLUME /var/lib/postgresql/data
-
+# 将入口点脚本复制到镜像，修改可执行权限，或者制作时就授予可执行权限
 COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
+# 将数据库配置脚本 setup.sh 传入镜像（可以跟镜像构建分开，下次扩展传入）
+COPY setup.sh /docker-entrypoint-initdb.d
+RUN chmod a+x /docker-entrypoint-initdb.d/setup.sh
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 
-# We set the default STOPSIGNAL to SIGINT, which corresponds to what PostgreSQL
-# calls "Fast Shutdown mode" wherein new connections are disallowed and any
-# in-progress transactions are aborted, allowing PostgreSQL to stop cleanly and
-# flush tables to disk, which is the best compromise available to avoid data
-# corruption.
-#
-# Users who know their applications do not keep open long-lived idle connections
-# may way to use a value of SIGTERM instead, which corresponds to "Smart
-# Shutdown mode" in which any existing sessions are allowed to finish and the
-# server stops when all sessions are terminated.
-#
-# See https://www.postgresql.org/docs/12/server-shutdown.html for more details
-# about available PostgreSQL server shutdown signals.
-#
-# See also https://www.postgresql.org/docs/12/server-start.html for further
-# justification of this as the default value, namely that the example (and
-# shipped) systemd service files use the "Fast Shutdown mode" for service
-# termination.
-#
 STOPSIGNAL SIGINT
-#
-# An additional setting that is recommended for all users regardless of this
-# value is the runtime "--stop-timeout" (or your orchestrator/runtime's
-# equivalent) for controlling how long to wait between sending the defined
-# STOPSIGNAL and sending SIGKILL (which is likely to cause data corruption).
-#
-# The default in most runtimes (such as Docker) is 10 seconds, and the
-# documentation at https://www.postgresql.org/docs/12/server-start.html notes
-# that even 90 seconds may not be long enough in many instances.
 
-EXPOSE 5432
+EXPOSE 5866
 CMD ["postgres"]
