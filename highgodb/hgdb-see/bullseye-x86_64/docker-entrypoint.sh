@@ -378,7 +378,7 @@ _main() {
 		fi
 	fi
 
-	## 由于瀚高数据库v4.5.8的问题，直接使用postgres启动数据库，授权文件不生效
+	## 由于瀚高数据库v4.5.8的某个缺陷，直接使用postgres启动数据库，授权文件不生效
 	## 所以，这里去掉开头的postgres，使用一个完整路径的postgres命令来启动，就可以生效了
 	if [ "$1" = 'postgres' ]; then
 		shift

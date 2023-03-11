@@ -1,7 +1,6 @@
 #
-# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
-#
-# PLEASE DO NOT EDIT IT DIRECTLY.
+# 基础镜像：debian:bullseye-slim
+# 数据库：hgdb-see-4.5.8-x86_64
 #
 
 FROM debian:bullseye-slim
