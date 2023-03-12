@@ -82,32 +82,43 @@ cd dfhgdb/
 
 由于基础镜像中没有`openssl`，事实上也没必要安装，只要能生成`root.crt`、`server.crt`、`server.key`并放到这个目录`dfhgdb`下备用即可。
 
-最终，构建目录下内容如下：
-
-```bash
--rw-r--r--. 1 root root 129309345 Dec 19 13:42 hgdb-see-4.5.8.tar.gz
--rw-r--r--. 1 root root      1338 Dec  5 16:06 root.crt
--rw-r--r--. 1 root root      1338 Dec  5 16:06 server.crt
--rw-r--r--. 1 root root      1679 Dec  5 16:06 server.key
-```
-
 ## 2.2 构建脚本 Dockerfile
 
 **文件链接**：GitHub 链接 [Dockerfile](https://github.com/blatwo/dockerfiles/blob/main/highgodb/hgdb-see/hgdb-see-4.5.8/bullseye-x86_64/Dockerfile)
 
-**文件说明**：由于篇幅问题，这里不再赘述，可以我在[pgfans](https://pgfans.cn/)上发布的文章https://pgfans.cn/a/2108
-
 **官方文件**：https://github.com/docker-library/postgres/blob/master/15/bullseye/Dockerfile
+
+**文件说明**：由于篇幅问题，这里不再赘述，可以我在[pgfans](https://pgfans.cn/)上发布的文章https://pgfans.cn/a/2108
 
 ## 2.3 入口点脚本 docker-entrypoint.sh
 
 **文件链接**：GitHub 链接 [docker-entrypoint.sh](https://github.com/blatwo/dockerfiles/blob/main/highgodb/hgdb-see/hgdb-see-4.5.8/bullseye-x86_64/docker-entrypoint.sh)
 
-**脚本说明**：由于篇幅问题，这里不再赘述，可以我在[pgfans](https://pgfans.cn/)上发布的文章https://pgfans.cn/a/2113
-
 **官方文件**：https://github.com/docker-library/postgres/blob/master/15/bullseye/docker-entrypoint.sh
 
-## 2.4 开始构建
+**脚本说明**：由于篇幅问题，这里不再赘述，可以我在[pgfans](https://pgfans.cn/)上发布的文章https://pgfans.cn/a/2113
+
+## 2.4 配置脚本 setup.sh
+
+**文件链接**：GitHub 链接 [setup.sh](https://github.com/blatwo/dockerfiles/blob/main/highgodb/hgdb-see/hgdb-see-4.5.8/bullseye-x86_64/setup.sh)
+
+**脚本说明**：该脚本是瀚高数据库安装完后的一些常见配置，里面包括一些注释了。
+
+将前面这些文件都传到目录下。最终，构建目录下内容如下：
+
+```bash
+[root@S1 ~]# ll dfhgdb/
+total 126320
+-rw-r--r--. 1 root root     14587 Mar 11 22:57 docker-entrypoint.sh
+-rw-r--r--. 1 root root      4142 Mar 11 22:57 Dockerfile
+-rw-r--r--. 1 root root 129309345 Dec 19 13:42 hgdb-see-4.5.8.tar.gz
+-rw-r--r--. 1 root root      1338 Dec  5 16:06 root.crt
+-rw-r--r--. 1 root root      1338 Dec  5 16:06 server.crt
+-rw-r--r--. 1 root root      1679 Dec  5 16:06 server.key
+-rw-r--r--. 1 root root      2160 Feb  9 00:08 setup.sh
+```
+
+## 2.5 开始构建
 
 准备好后，就可以构建镜像了。构建命令如下：
 
@@ -115,7 +126,7 @@ cd dfhgdb/
 docker build -t qiuchenjun/hgdb-see:4.5.8 .
 ```
 
-构建玩抽，查看本地镜像：
+构建完后，查看本地镜像：
 
 ```bash
 [root@S1 ~]# docker images
