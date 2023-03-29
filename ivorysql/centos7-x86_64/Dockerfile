@@ -14,10 +14,12 @@ ENV IVY_MAJOR 2
 #    && echo ${TZ} > /etc/timezone
 
 # 安装 gosu
-COPY --from=gosu/assets /opt/gosu /opt/gosu
-RUN set -x \
-    && /opt/gosu/gosu.install.sh \
-    && rm -fr /opt/gosu
+COPY --from=qiuchenjun/gosu /gosu-amd64 /usr/local/bin/gosu
+
+#COPY --from=gosu/assets /opt/gosu /opt/gosu
+#RUN set -x \
+#    && /opt/gosu/gosu.install.sh \
+#    && rm -fr /opt/gosu
 
 # 明确设置“用户”或“组”的ID
 RUN set -eux; \
