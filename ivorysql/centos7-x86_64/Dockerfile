@@ -15,6 +15,10 @@ ENV IVY_MAJOR 2
 
 # 安装 gosu
 COPY --from=qiuchenjun/gosu /gosu-amd64 /usr/local/bin/gosu
+RUN set -eux; \
+    chmod +x /usr/local/bin/gosu; \
+    gosu --version; \
+    gosu nobody true
 
 #COPY --from=gosu/assets /opt/gosu /opt/gosu
 #RUN set -x \
