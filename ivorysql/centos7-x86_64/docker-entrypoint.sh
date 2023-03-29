@@ -161,7 +161,7 @@ docker_verify_minimum_env() {
 docker_process_init_files() {
 	# psql here for backwards compatibility "${psql[@]}"
 	psql=( docker_process_sql )
-
+123
 	echo
 	local f
 	for f; do
