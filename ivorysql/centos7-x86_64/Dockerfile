@@ -61,8 +61,8 @@ RUN mkdir -p /var/run/ivorysql/ivorysql-${IVY_MAJOR} && chown -R ivorysql:ivorys
 ENV PGDATA /var/lib/ivorysql/ivorysql-${IVY_MAJOR}/data
 # 这里的 777 在运行 IvorySQL 服务时会被 700 替换 (允许 semi-arbitrary "--user" 值)
 RUN mkdir -p ${PGDATA} && chown -R ivorysql:ivorysql ${PGDATA} && chmod 777 ${PGDATA}
-#VOLUME ["${PGDATA}"]
-VOLUME ["/var/lib/ivorysql"]
+VOLUME ["${PGDATA}"]
+#VOLUME ["/var/lib/ivorysql"]
 
 COPY docker-entrypoint.sh /usr/local/bin/
 # 需要修改可执行权限，或者制作时就授予可执行权限
