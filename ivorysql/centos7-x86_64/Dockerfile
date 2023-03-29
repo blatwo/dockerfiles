@@ -38,7 +38,7 @@ RUN mkdir /docker-entrypoint-initdb.d
 # 安装 IvorySQL
 #ENV IVY_MAJOR 2
 ENV PATH $PATH:/usr/local/ivorysql/ivorysql-${IVY_MAJOR}/bin
-1
+
 RUN set -ex; \
     # download ivorysql-release-1.0-${IVY_MAJOR}.noarch.rpm
     curl -o ivorysql-release-1.0-${IVY_MAJOR}.noarch.rpm https://yum.highgo.ca/dists/ivorysql-rpms/repo/ivorysql-release-1.0-${IVY_MAJOR}.noarch.rpm; \
