@@ -8,7 +8,7 @@ chmod 0600 ~/.pgpass
 # 创建归档目录
 mkdir -p /home/highgo/hgdb/hgdbbak/archive && chown -R highgo:highgo /home/highgo/hgdb && chmod 777 /home/highgo/hgdb
 
-psql highgo sysdba <<- 'EOF'
+PGPASSWORD=${POSTGRES_PASSWORD} psql highgo highgo <<- 'EOF'
 	alter system set listen_addresses = '*';
 	alter system set port = 5866;
 	alter system set max_connections = 2000;

@@ -28,7 +28,7 @@ RUN mkdir /docker-entrypoint-initdb.d
 ENV HG_VERSION=HighGo6.0.4-cluster
 ENV HGDB_HOME=/opt/${HG_VERSION}
 ENV PATH=$PATH:${HGDB_HOME}/bin
-ENV PGDATA=${HIGHGO_HOME}/data
+ENV PGDATA=${HIGHGO_HOME}/hgdb/data
 
 # 添加瀚高数据库程序压缩包
 ADD ${HG_VERSION}.tar.gz /
