@@ -6,7 +6,7 @@
 
 # 导读
 
-目前瀚高数据库v4.5.8的安装方式主要有二进制安装（`rpm`或`deb`包），为了更快上手体验，以及使多个异构数据库共存在于一台宿主机，我们就可以考虑使用`Docker`容器来运行它，这样各厂商的数据库就不会相互影响了。如果你已经有了`Docker`环境，那就可以跳过第一部分；如果你不想自己制作镜像，可以跳过第二部分，直接到第三、四部分运行[Docker hub](https://hub.docker.com/)上的[瀚高数据库镜像](https://hub.docker.com/r/qiuchenjun/hgdb)（非官方制作，仅供测试体验）和使用即可。
+目前瀚高数据库v6.0.4的安装方式主要有二进制安装（`rpm`或`deb`包），为了更快上手体验，以及使多个异构数据库共存在于一台宿主机，我们就可以考虑使用`Docker`容器来运行它，这样各厂商的数据库就不会相互影响了。如果你已经有了`Docker`环境，那就可以跳过第一部分；如果你不想自己制作镜像，可以跳过第二部分，直接到第三、四部分运行[Docker hub](https://hub.docker.com/)上的[瀚高数据库镜像](https://hub.docker.com/r/qiuchenjun/hgdb)（非官方制作，仅供测试体验）和使用即可。
 
 本文宿主机操作系统是`Centos7.9_x86-64`，Docker版本`20.10.23`，基于基础镜像`debian:bullseye-slim`制作。
 
@@ -84,27 +84,28 @@ cd dfhgdb/
 
 瀚高数据库的二进制包中包含了较多工具，占用空间较大，我们只提取出与`数据库服务相关的文件`放到构建目录`dfhgdb`下即可。把安装后的目录`/opt/HighGo6.0.4-cluster/`压缩成`hgdb-ee-6.0.4.tar.gz`，上传到构建目录。
 
-由于基础镜像中没有`openssl`，事实上也没必要安装，只要能生成`root.crt`、`server.crt`、`server.key`并放到这个目录`dfhgdb`下备用即可。
+由于基础镜像中没有`openssl`，事实上也没必要安装，只要能生成`root.crt`、`server.crt`、`server.key`并放到这个目录`dfhgdb`下备用即可（非必须文件）。
+
+>   **二进制包制作命令：**
+>
+>   -   rpm2cpio hgdb6.0.4-enterprise-centos7-x86-64-20220127.rpm | cpio -idmv
+>   -   tar -czvf HighGo6.0.4-cluster.tar.gz ./opt
 
 ## 2.2 构建脚本 Dockerfile
 
-**文件链接**：GitHub 链接 [Dockerfile](https://github.com/blatwo/dockerfiles/blob/main/highgodb/hgdb-see/hgdb-see-4.5.8/bullseye-x86_64/Dockerfile)
-
-**官方文件**：https://github.com/docker-library/postgres/blob/master/15/bullseye/Dockerfile
+**文件链接**：GitHub 链接 [Dockerfile](https://github.com/blatwo/dockerfiles/blob/main/highgo/hgdb-ee/hgdb-ee-6.0.4/centos7-x86_64/Dockerfile)
 
 **文件说明**：由于篇幅问题，这里不再赘述，可以我在[pgfans](https://pgfans.cn/)上发布的文章https://pgfans.cn/a/2108
 
 ## 2.3 入口点脚本 docker-entrypoint.sh
 
-**文件链接**：GitHub 链接 [docker-entrypoint.sh](https://github.com/blatwo/dockerfiles/blob/main/highgodb/hgdb-see/hgdb-see-4.5.8/bullseye-x86_64/docker-entrypoint.sh)
-
-**官方文件**：https://github.com/docker-library/postgres/blob/master/15/bullseye/docker-entrypoint.sh
+**文件链接**：GitHub 链接 [docker-entrypoint.sh](https://github.com/blatwo/dockerfiles/blob/main/highgo/hgdb-ee/hgdb-ee-6.0.4/centos7-x86_64/docker-entrypoint.sh)
 
 **脚本说明**：由于篇幅问题，这里不再赘述，可以我在[pgfans](https://pgfans.cn/)上发布的文章https://pgfans.cn/a/2113
 
 ## 2.4 配置脚本 setup.sh
 
-**文件链接**：GitHub 链接 [setup.sh](https://github.com/blatwo/dockerfiles/blob/main/highgodb/hgdb-see/hgdb-see-4.5.8/bullseye-x86_64/setup.sh)
+**文件链接**：GitHub 链接 [setup.sh](https://github.com/blatwo/dockerfiles/blob/main/highgo/hgdb-ee/hgdb-ee-6.0.4/centos7-x86_64/setup.sh)
 
 **脚本说明**：该脚本是瀚高数据库安装完后的一些常见配置，里面包括一些注释了。
 
@@ -115,7 +116,7 @@ cd dfhgdb/
 total 126320
 -rw-r--r--. 1 root root     14587 Mar 11 22:57 docker-entrypoint.sh
 -rw-r--r--. 1 root root      4142 Mar 11 22:57 Dockerfile
--rw-r--r--. 1 root root 129309345 Dec 19 13:42 hgdb-see-4.5.8.tar.gz
+-rw-r--r--. 1 root root 129309345 Dec 19 13:42 hgdb-see-6.0.4.tar.gz
 -rw-r--r--. 1 root root      1338 Dec  5 16:06 root.crt
 -rw-r--r--. 1 root root      1338 Dec  5 16:06 server.crt
 -rw-r--r--. 1 root root      1679 Dec  5 16:06 server.key
@@ -136,7 +137,7 @@ docker build -t qiuchenjun/hgdb-ee:6.0.4 .
 [root@S1 ~]# docker images
 结果：
 REPOSITORY            TAG       IMAGE ID       CREATED         SIZE
-qiuchenjun/hgdb-see   4.5.8     3bdfd3151050   5 minutes ago   531MB
+qiuchenjun/hgdb-see   6.0.4     91bbc88edd02   5 minutes ago   494MB
 ```
 
 
@@ -187,7 +188,7 @@ docker run -dit --name=myhgdb-ee-6.0.4 -p 5866:5866 `
 
 ## 3.2 在线仓库镜像
 
-已构建的镜像已经上传[docker仓库](https://hub.docker.com/r/qiuchenjun/hgdb-see)，更详细的操作说明可以参考这个链接。
+已构建的镜像已经上传[docker仓库](https://hub.docker.com/repository/docker/qiuchenjun/hgdb-ee/general)，更详细的操作说明可以参考这个链接。
 
 如果不想自己制作，可以直接通过上面命令运行它，会自动拉去最新的。果想拉取指定版本的镜像，命令如下：
 
@@ -203,7 +204,7 @@ docker pull qiuchenjun/hgdb-ee:6.0.4
 
 ## 4.1 数据库配置
 
-安全版数据库镜像构建容器实例时，已经通过setup.sh进行了一系列常见配置。额外的配置可以通过客户端执行SQL命令，或者有必要则进入容器修改。
+企业版数据库镜像构建容器实例时，已经通过setup.sh进行了一系列常见配置。额外的配置可以通过客户端执行SQL命令，或者有必要则进入容器修改。
 
 进入容器的命令如下：
 
@@ -239,6 +240,17 @@ docker restart myhgdb-ee-6.0.4
 docker exec -it myhgdb-ee-6.0.4 gosu highgo check_lic
 ```
 
+如：
+
+>   [root@Node01 ~]# cp -p hgdb6-360.lic /home/hgdb604/data/hgdb.lic
+>   [root@Node01 ~]# docker exec -it myhgdb-ee-6.0.4 gosu highgo check_lic
+>
+>   ############## HIGHGODB LICENSE ###################
+>   License status:Normal
+>   License validity:2024-11-11
+>   Database Version:Highgo Database 6.0.1 Trail Edition
+>   ###################################################
+
 
 
 # 五、数据库扩展
@@ -247,30 +259,30 @@ docker exec -it myhgdb-ee-6.0.4 gosu highgo check_lic
 
 ## 5.1 构建扩展镜像
 
-压缩包`hgdb-see-4.5.8-postgis3.1.tar.gz`是从rpm包解开并压缩的，命令参见：
+压缩包`hgdb-ee-6.0.4-postgis3.0.tar.gz`是从rpm包解开并压缩的，命令参见：
 
 ```bash
-rpm2cpio p001_see_4.5.8_fh_db43858.x86_64.rpm | cpio -idmv && tar -czvf hgdb-see-4.5.8-postgis3.1.tar.gz ./opt
+rpm2cpio postgis3.0-6.0.4-enterprise-centos7-x86-64-20220127.rpm | cpio -idmv && tar -czvf hgdb-ee-6.0.4-postgis3.0.tar.gz ./opt
 ```
 
 DockerFile内容如下：
 
 ```dockerfile
 #
-# 基础镜像：qiuchenjun/hgdb-see:4.5.8
-# 数据库：hgdb-see-4.5.8-x86_64
-# 扩展：hgdb-see-4.5.8-postgis3.1.tar.gz
+# 基础镜像：qiuchenjun/hgdb-ee:6.0.4
+# 数据库：hgdb-ee-6.0.4-x86_64
+# 扩展：hgdb-ee-6.0.4-postgis3.0.tar.gz
 #
-FROM qiuchenjun/hgdb-see:4.5.8
+FROM qiuchenjun/hgdb-ee:6.0.4
 # 添加 PostGIS 扩展包
-ADD hgdb-see-4.5.8-postgis3.1.tar.gz /
+ADD hgdb-ee-6.0.4-postgis3.0.tar.gz /
 
 ```
 
 构建命令：
 
 ```bash
-docker build -t qiuchenjun/hgdb-see-postgis:4.5.8 .
+docker build -t qiuchenjun/hgdb-ee-postgis:6.0.4 .
 ```
 
 ## 5.2 运行扩展镜像
@@ -279,13 +291,13 @@ docker build -t qiuchenjun/hgdb-see-postgis:4.5.8 .
 
 ```bash
 docker run -dit --name=myhgdb-ee-6.0.4 -p 5866:5866 \
-           -v /home/hgdb458:/home/highgo/hgdb \
+           -v /home/hgdb604:/home/highgo/hgdb \
            -e TZ="Asia/Shanghai" \
            -e LANG="en_US.utf8" \
-           -e POSTGRES_HOST_AUTH_METHOD="sm3" \
-           -e POSTGRES_PASSWORD="Hello@1234" \
-           -e POSTGRES_INITDB_ARGS="-e sm4 -c 'echo 12345678' -E 'UTF8'" \
-           qiuchenjun/hgdb-see-postgis:4.5.8
+           -e POSTGRES_HOST_AUTH_METHOD="md5" \
+           -e POSTGRES_PASSWORD="Hello@123" \
+           -e POSTGRES_INITDB_ARGS="-E 'UTF8'" \
+           qiuchenjun/hgdb-ee-postgis:6.0.4
 ```
 
 ## 5.3 使用方式
@@ -293,7 +305,7 @@ docker run -dit --name=myhgdb-ee-6.0.4 -p 5866:5866 \
 创建用户和数据库：
 
 ```bash
-docker exec -i -e PGPASSWORD=Hello@1234 myhgdb-ee-6.0.4 psql highgo sysdba <<-"EOF"
+docker exec -i -e PGPASSWORD=Hello@123 myhgdb-ee-6.0.4 psql highgo highgo <<-"EOF"
 create user test password 'Hello@123' valid until 'infinity';
 create database testdb with owner=test encoding=utf8 connection limit=-1;
 EOF
@@ -303,39 +315,17 @@ EOF
 >
 >   这里假设我们要在数据库`testdb`上使用扩展，数据库用户是`test`，密码是`Hello@123`.
 
-使用管理员`sysdba`在数据库`testdb`上创建扩展，首先关闭三权：
-
-```bash
-# 首先关闭三权
-docker exec -i -e PGPASSWORD=Hello@1234 myhgdb-ee-6.0.4 psql highgo syssso <<-"EOF"
-select set_secure_param('hg_sepofpowers','off');
-EOF
-# 重启容器
-docker restart myhgdb-ee-6.0.4
-```
-
 创建扩展：
 
 ```bash
-docker exec -i -e PGPASSWORD=Hello@1234 myhgdb-ee-6.0.4 psql testdb sysdba <<-"EOF"
+docker exec -i -e PGPASSWORD=Hello@123 myhgdb-ee-6.0.4 psql testdb highgo <<-"EOF"
 create extension postgis;
 EOF
 ```
 
 >   说明：
 >
->   注意数据库是你的数据库`testdb`，还要使用`sysdba`进行安装，其他用户无权限创建扩展。
-
-重新开启三权：
-
-```bash
-# 开启三权
-docker exec -i -e PGPASSWORD=Hello@1234 myhgdb-ee-6.0.4 psql highgo syssso <<-"EOF"
-select set_secure_param('hg_sepofpowers','on');
-EOF
-# 重启容器
-docker restart myhgdb-ee-6.0.4
-```
+>   注意数据库是你的数据库`testdb`，还要使用`highgo`进行安装，其他用户无权限创建扩展。
 
 验证扩展：
 
