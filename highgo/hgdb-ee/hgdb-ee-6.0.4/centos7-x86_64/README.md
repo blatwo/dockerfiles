@@ -1,4 +1,4 @@
-# PostgreSQL 生态之 HighgoDB 容器化部署方式（一）
+# PostgreSQL 生态之瀚高企业版 DB 容器化部署方式
 
 有很多软件都喜欢以容器方式来运行，`PostgreSQL`也不例外，在[dockerhub](https://hub.docker.com/)上有不同PG版本的官方镜像（最新的是PG15），可以直接在线构建使用。具体介绍和使用可以参见官方链接：https://hub.docker.com/_/postgres，也可以参考文章《如何使用 PostgreSQL 镜像》链接：https://pgfans.cn/a/2110。
 
