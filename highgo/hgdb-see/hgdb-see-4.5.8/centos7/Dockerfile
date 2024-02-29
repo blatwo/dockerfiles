@@ -1,6 +1,6 @@
 #
 # 基础镜像：centos:centos7
-# 数据库：hgdb-see-4.5.8-amd64/arm64
+# 数据库：hgdb-see-4.5.8
 #
 
 FROM qiuchenjun/baseos:centos7
@@ -8,7 +8,6 @@ FROM qiuchenjun/baseos:centos7
 # 明确设置“用户”和“组”ID
 # 创建用户目录
 ENV HIGHGO_HOME=/home/highgo
-#ENV HIGHGO_HOME=/var/lib/postgresql
 RUN set -eux; \
 	groupadd -r highgo --gid=996; \
 	useradd -r -g highgo --uid=996 --home-dir=${HIGHGO_HOME} --shell=/bin/bash highgo; \
@@ -52,7 +51,7 @@ RUN set -eux; \
 # 创建数据目录并授权
 RUN mkdir -p "$PGDATA" && chown -R highgo:highgo "$PGDATA" && chmod 777 "$PGDATA"
 # 映射到宿主机的目录
-VOLUME ${HIGHGO_HOME}/data
+VOLUME ${HIGHGO_HOME}/hgdb
 
 # 将入口点脚本复制到镜像，修改可执行权限，或者制作时就授予可执行权限
 COPY docker-entrypoint.sh /usr/local/bin/
