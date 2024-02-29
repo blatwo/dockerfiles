@@ -1,6 +1,6 @@
 #
 # 基础镜像：centos:centos7
-# 数据库：hgdb-see-4.5.7-x86_64
+# 数据库：hgdb-see-4.5.8-amd64/arm64
 #
 
 FROM qiuchenjun/baseos:centos7
@@ -15,6 +15,11 @@ RUN set -eux; \
 	mkdir -p ${HIGHGO_HOME}; \
 	chown -R highgo:highgo ${HIGHGO_HOME}
 
+# 创建目录用于存放数据库初始化脚本和配置
+# 当数据库镜像的容器第一次启动时，容器的入口点脚本（entrypoint script）会检查这个目录下的文件，
+# 并按顺序执行其中的 SQL 脚本、Shell 脚本等，以完成数据库的初始化工作。
+# 这包括但不限于创建用户、创建数据库、初始化数据库表结构和数据。
+# 文件和脚本按照文件名的字典序升序执行。这意味着，文件名较小的文件会先执行。例如，01-init.sql 会在 02-init.sql 之前执行。
 RUN mkdir /docker-entrypoint-initdb.d
 
 # 设置瀚高数据库版本、环境变量以及安装
@@ -24,7 +29,11 @@ ENV PATH=$PATH:${HGDB_HOME}/bin
 ENV PGDATA=${HIGHGO_HOME}/hgdb/data
 
 # 添加瀚高数据库程序压缩包
-ADD ${HG_VERSION}.tar.gz /
+#ADD ${HG_VERSION}.tar.gz /
+ARG TARGETPLATFORM
+ADD hgdb-see-4.5.8-${TARGETPLATFORM}.tar.gz /
+#COPY --from=qiuchenjun/highgo:hgdb-see-4.5.8 /hgdb-see-4.5.8.tar.gz /
+#RUN tar -xzf /hgdb-see-4.5.8.tar.gz -C / && rm /hgdb-see-4.5.8.tar.gz
 
 # 添加 ssl 证书文件并修改权限，因为镜像里没有 openssl 命令，无法创建它们。
 COPY --from=qiuchenjun/hgdb-crts /root.crt /server.* ${HIGHGO_HOME}/

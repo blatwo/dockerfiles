@@ -62,5 +62,3 @@ RUN set -eux; \
 		zstd \
 	; \
 	rm -rf /var/lib/apt/lists/*
-
-RUN mkdir /docker-entrypoint-initdb.d
