@@ -23,6 +23,7 @@ psql highgo syssso <<- 'EOF'
 	select set_secure_param('hg_showlogininfo','off');
 	select set_secure_param('hg_clientnoinput','0');
 	select set_secure_param('hg_idcheck.pwdpolicy','high');
+	select set_secure_param('hg_idcheck.pwdvaliduntil','0');
 EOF
 
 psql highgo syssao <<- 'EOF'
