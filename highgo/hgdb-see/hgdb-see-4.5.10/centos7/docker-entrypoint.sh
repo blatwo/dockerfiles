@@ -101,8 +101,8 @@ docker_init_database_dir() {
 	echo "Hello@123456" >> ${passwords_file}
 	echo "Hello@123456" >> ${passwords_file}
 	eval 'initdb --pwfile=${passwords_file} '"$POSTGRES_INITDB_ARGS"' "$@"'
-	cp /home/highgo/root.crt "$PGDATA"
-	cp /home/highgo/server.* "$PGDATA"
+	mv /home/highgo/root.crt "$PGDATA"
+	mv /home/highgo/server.* "$PGDATA"
 	## 注释掉原有的eval命令，这个是创建用户，瀚高数据库不需要
 	# eval 'initdb --username="$POSTGRES_USER" --pwfile=<(printf "%s\n" "$POSTGRES_PASSWORD") '"$POSTGRES_INITDB_ARGS"' "$@"'
 
@@ -378,8 +378,8 @@ _main() {
 		fi
 	fi
 
-	## 由于瀚高数据库v4.5.x的某个缺陷，直接使用 postgres 启动数据库，授权文件不生效
-	## 所以，这里去掉开头的 postgres，使用一个完整路径的 postgres 命令来启动，就可以生效了
+	## 由于瀚高数据库v4.5.8的某个缺陷，直接使用postgres启动数据库，授权文件不生效
+	## 所以，这里去掉开头的postgres，使用一个完整路径的postgres命令来启动，就可以生效了
 	if [ "$1" = 'postgres' ]; then
 		shift
 	fi
