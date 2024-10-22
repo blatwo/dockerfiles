@@ -31,13 +31,13 @@ RUN set -eux; \
 RUN mkdir /docker-entrypoint-initdb.d
 
 # 添加瀚高数据库程序压缩包
-#ADD ${HG_VERSION}.tar.gz /
-ARG TARGETPLATFORM
-ADD ${HG_VERSION}-${TARGETPLATFORM}.tar.gz /
+ADD ${HG_VERSION}.tar.gz /opt/highgo
+#ARG TARGETPLATFORM
+#ADD ${HG_VERSION}-${TARGETPLATFORM}.tar.gz /
 
 # 添加 SSL 证书文件并修改权限，因为镜像里没有 openssl 命令，无法创建它们。
-# COPY root.crt server.* ${HIGHGO_HOME}/
-COPY --from=qiuchenjun/hgdb-crts /root.crt /server.* ${HIGHGO_HOME}/
+COPY root.crt server.* ${HIGHGO_HOME}/
+#COPY --from=qiuchenjun/hgdb-crts /root.crt /server.* ${HIGHGO_HOME}/
 RUN chown -R highgo:highgo ${HIGHGO_HOME}/root.crt; \
 	chown -R highgo:highgo ${HIGHGO_HOME}/server.*; \
 	chmod 0600 ${HIGHGO_HOME}/server.key
