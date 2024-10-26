@@ -13,6 +13,7 @@ FROM qiuchenjun/baseos:bookworm-slim
 # PGDATA：存储瀚高数据库数据的目录，要重点注意。
 ENV HIGHGO_HOME=/home/highgo
 ENV HG_VERSION=hgdb-see-4.5.10
+ENV BRACH_CODE=a64a611
 ENV HGDB_HOME=/opt/highgo/${HG_VERSION}
 ENV PATH=$PATH:${HGDB_HOME}/bin
 ENV PGDATA=${HIGHGO_HOME}/hgdb/data
@@ -31,9 +32,9 @@ RUN set -eux; \
 RUN mkdir /docker-entrypoint-initdb.d
 
 # 添加瀚高数据库程序压缩包
-ADD ${HG_VERSION}.tar.gz /opt/highgo
-#ARG TARGETPLATFORM
-#ADD ${HG_VERSION}-${TARGETPLATFORM}.tar.gz /
+#ADD ${HG_VERSION}.tar.gz /opt/highgo
+ARG TARGETOS TARGETARCH
+ADD ${HG_VERSION}-${BRACH_CODE}-${TARGETARCH}.tar.gz /opt/highgo
 
 # 添加 SSL 证书文件并修改权限，因为镜像里没有 openssl 命令，无法创建它们。
 COPY root.crt server.* ${HIGHGO_HOME}/
