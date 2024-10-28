@@ -6,13 +6,14 @@
 
 FROM debian:bookworm-slim
 
+# https://www.postgresql.org/docs/16/app-psql.html#APP-PSQL-META-COMMAND-PSET-PAGER
+# https://github.com/postgres/postgres/blob/REL_16_1/src/include/fe_utils/print.h#L25
+# 如果可以使用“less”，它将被用作 psql 的默认分页器，并且仅会使我们的镜像大小增加大约 1.5 MiB。
+(if "less" is available, it gets used as the default pager for psql, and it only adds ~1.5MiB to our image size)
 RUN set -ex; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		gnupg \
-# https://www.postgresql.org/docs/16/app-psql.html#APP-PSQL-META-COMMAND-PSET-PAGER
-# https://github.com/postgres/postgres/blob/REL_16_1/src/include/fe_utils/print.h#L25
-# (if "less" is available, it gets used as the default pager for psql, and it only adds ~1.5MiB to our image size)
 		less \
 	; \
 	rm -rf /var/lib/apt/lists/*
