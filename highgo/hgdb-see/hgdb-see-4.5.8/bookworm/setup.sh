@@ -1,6 +1,7 @@
 
 PGPASSWORD=Hello@123456 psql highgo syssso <<- EOF
 	select set_secure_param('hg_idcheck.pwdvaliduntil','0');
+	select set_secure_param('hg_idcheck.pwdpolicy','low');
 	alter user current_user password '${POSTGRES_PASSWORD}' valid until 'infinity';
 	\c - sysdba
 	alter user current_user password '${POSTGRES_PASSWORD}';
@@ -22,7 +23,7 @@ psql highgo syssso <<- 'EOF'
 	select set_secure_param('hg_rowsecure','off');
 	select set_secure_param('hg_showlogininfo','off');
 	select set_secure_param('hg_clientnoinput','0');
-	select set_secure_param('hg_idcheck.pwdpolicy','high');
+	select set_secure_param('hg_idcheck.pwdpolicy','low');
 	select set_secure_param('hg_idcheck.pwdvaliduntil','0');
 EOF
 
