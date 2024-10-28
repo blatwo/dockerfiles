@@ -44,7 +44,7 @@ RUN set -eux; \
 	gosu nobody true
 
 # 创建 "en_US.UTF-8" 语言环境，以便 PostgreSQL 默认启用 UTF-8。
-# 创建 "zh_CN.UTF-8" 语言环境，以便支持中文。
+# 创建 "zh_CN.UTF-8" 和 "zh_CN.GB18030" 语言环境，以便支持中文。
 RUN set -eux; \
 	if [ -f /etc/dpkg/dpkg.cfg.d/docker ]; then \
 # 如果该文件存在，我们可能处于 "debian:xxx-slim" 环境，因此语言环境被排除了，我们需要去除该排除（因为我们需要语言环境）。
@@ -55,9 +55,11 @@ RUN set -eux; \
 	apt-get update; apt-get install -y --no-install-recommends locales; rm -rf /var/lib/apt/lists/*; \
 	echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen; \
 	echo 'zh_CN.UTF-8 UTF-8' >> /etc/locale.gen; \
+	echo 'zh_CN.GB18030 GB18030' >> /etc/locale.gen; \
 	locale-gen; \
 	locale -a | grep 'en_US.utf8'; \
-	locale -a | grep 'zh_CN.utf8';
+	locale -a | grep 'zh_CN.utf8'; \
+	locale -a | grep 'zh_CN.GB18030';
 ENV LANG=en_US.utf8
 
 # 更新软件包列表并安装几个必要的软件包。
