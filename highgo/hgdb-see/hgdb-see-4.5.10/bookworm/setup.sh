@@ -58,3 +58,7 @@ psql highgo sysdba <<- 'EOF'
 	alter system set log_line_prefix = '%m [%p] %a %u %d %r %h';
 	alter system set nls_length_semantics = 'char'; 
 EOF
+
+SET application_name = securedump;
+CREATE ROLE ${POSTGRES_USER} WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS 
+       PASSWORD '${POSTGRES_PASSWORD}';
