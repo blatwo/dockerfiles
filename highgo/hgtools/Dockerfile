@@ -1,6 +1,6 @@
 # 使用 Alpine 作为基础镜像
-#FROM alpine:latest
-FROM debian:bookworm-slim
+FROM alpine:latest
+#FROM debian:bookworm-slim
 
 ENV HG_VERSION=hgtools-linux
 
