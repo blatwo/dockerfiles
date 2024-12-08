@@ -4,6 +4,7 @@
 #
 
 FROM qiuchenjun/baseos:bookworm-slim
+#FROM registry.cn-beijing.aliyuncs.com/annunaki/baseos:bookworm-slim
 
 # 环境变量
 # HIGHGO_HOME：用户目录，用于存放用户 highgo 的数据文件等。一般情况不需要更换路径；
@@ -63,8 +64,8 @@ VOLUME ${HIGHGO_HOME}/hgdb
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 # 将数据库配置脚本 setup.sh 传入镜像（可以跟镜像构建分开，下次扩展传入）
-COPY setup.sh /docker-entrypoint-initdb.d
-RUN chmod a+x /docker-entrypoint-initdb.d/setup.sh
+COPY setup.sh /docker-entrypoint-initdb.d/10_setup.sh
+RUN chmod a+x /docker-entrypoint-initdb.d/10_setup.sh
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 

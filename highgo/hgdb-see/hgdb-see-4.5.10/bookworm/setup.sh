@@ -52,13 +52,17 @@ psql highgo sysdba <<- 'EOF'
 	alter system set log_disconnections=on;
 	alter system set checkpoint_timeout='30min';
 	alter system set maintenance_work_mem='1GB';
-	alter system set archive_mode = on;
+	alter system set archive_mode = off;
 	alter system set archive_timeout = '30min';
 	alter system set archive_command = 'cp %p /home/highgo/hgdb/hgdbbak/archive/%f';
 	alter system set log_line_prefix = '%m [%p] %a %u %d %r %h';
+	alter system set shared_preload_libraries = 'pg_stat_statements';
 	alter system set nls_length_semantics = 'char'; 
 EOF
 
-SET application_name = securedump;
-CREATE ROLE ${POSTGRES_USER} WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS 
-       PASSWORD '${POSTGRES_PASSWORD}';
+psql highgo sysdba <<- EOF
+	SET application_name = securedump;
+	CREATE ROLE ${POSTGRES_USER} WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS 
+	    PASSWORD '${POSTGRES_PASSWORD}';
+	CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};
+EOF
