@@ -1,28 +1,18 @@
-#
-# NOTE: THIS DOCKERFILE IS GENERATED VIA "make update"! PLEASE DO NOT EDIT IT DIRECTLY.
-#
-
-FROM postgres:12-bullseye
+FROM registry.cn-beijing.aliyuncs.com/hgdb/hgdb-see:4.5.10
+#FROM qiuchenjun/hgdb-see:4.5.10
 
 LABEL maintainer="PostGIS Project - https://postgis.net" \
-      org.opencontainers.image.description="PostGIS 3.5.0+dfsg-1.pgdg110+1 spatial database extension with PostgreSQL 12 bullseye" \
-      org.opencontainers.image.source="https://github.com/postgis/docker-postgis"
+      org.opencontainers.image.description="PostGIS 3.4.0+Hgdb-see-4.5.10 spatial database extension with HGDB-See-4.5.10" \
+      org.opencontainers.image.source="https://github.com/"
 
-ENV POSTGIS_MAJOR 3
-ENV POSTGIS_VERSION 3.5.0+dfsg-1.pgdg110+1
+ENV POSTGIS_MAJOR=3
+ENV POSTGIS_VERSION=postgis340-hgdb-see-4.5.10-a64a611-20240426
 
-RUN apt-get update \
-      && apt-cache showpkg postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
-      && apt-get install -y --no-install-recommends \
-           # ca-certificates: for accessing remote raster files;
-           #   fix: https://github.com/postgis/docker-postgis/issues/307
-           ca-certificates \
-           \
-           postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR=$POSTGIS_VERSION \
-           postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts \
-      && rm -rf /var/lib/apt/lists/*
+ARG TARGETOS TARGETARCH
+
+ADD postgis340-hgdb-see-4.5.10-a64a611-20240426.${TARGETARCH}.tar.gz /opt/highgo/hgdb-see-4.5.10
 
 RUN mkdir -p /docker-entrypoint-initdb.d
-COPY ./initdb-postgis.sh /docker-entrypoint-initdb.d/10_postgis.sh
-COPY ./update-postgis.sh /usr/local/bin
+COPY ./initdb-postgis.sh /docker-entrypoint-initdb.d/20_postgis.sh
+#COPY ./update-postgis.sh /usr/local/bin
 
