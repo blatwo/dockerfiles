@@ -3,8 +3,8 @@
 # 适用数据库：hgdb-see-4.5.x
 #
 
-FROM qiuchenjun/baseos:bookworm-slim
-#FROM registry.cn-beijing.aliyuncs.com/annunaki/baseos:bookworm-slim
+#FROM qiuchenjun/baseos:bookworm-slim
+FROM registry.cn-beijing.aliyuncs.com/annunaki/baseos:bookworm-slim
 
 # 环境变量
 # HIGHGO_HOME：用户目录，用于存放用户 highgo 的数据文件等。一般情况不需要更换路径；
