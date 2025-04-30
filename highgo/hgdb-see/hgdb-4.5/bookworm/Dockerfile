@@ -1,6 +1,6 @@
 #
 # 基础镜像：debian:bookworm-slim
-# 适用数据库：hgdb-see-4.5.x
+# 适用数据库：hgdb-see-4.5.x（内部版本号）
 #
 
 #FROM qiuchenjun/baseos:bookworm-slim
@@ -9,15 +9,17 @@ FROM registry.cn-beijing.aliyuncs.com/annunaki/baseos:bookworm-slim
 # 环境变量
 # HIGHGO_HOME：用户目录，用于存放用户 highgo 的数据文件等。一般情况不需要更换路径；
 # HG_VERSION：瀚高数据库的安装版本，构建不同版本的数据库镜像，需要更换版本号；
-# HGDB_HOME：瀚高数据库的安装路径。固定安装在 /opt/highgo/hgdb-see-4.5.x下；
+# HGDB_HOME：瀚高数据库的安装路径。从4.5.10.3开始固定安装在 /opt/highgo/hgdb-4.5 下；
 # PATH：添加 HGDB_HOME/bin 到 PATH，方便在容器内直接执行数据库命令；
 # PGDATA：存储瀚高数据库数据的目录，要重点注意。
 ENV HIGHGO_HOME=/home/highgo
-ENV HG_VERSION=hgdb-see-4.5.10
-ENV BRACH_CODE=a64a611
+ENV HG_VERSION=${HG_VERSION}
+ENV BRACH_CODE=${BRACH_CODE}
 ENV HGDB_HOME=/opt/highgo/${HG_VERSION}
 ENV PATH=$PATH:${HGDB_HOME}/bin
 ENV PGDATA=${HIGHGO_HOME}/hgdb/data
+
+RUN echo "Using HG_VERSION=$HG_VERSION and BRACH_CODE=$BRACH_CODE"
 
 # 显示设置用户（user）/组（group）的 ID
 RUN set -eux; \
