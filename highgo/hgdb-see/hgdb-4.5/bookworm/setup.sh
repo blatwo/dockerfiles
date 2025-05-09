@@ -101,10 +101,24 @@ docker_setup_user() {
 		EOSQL
 	)"
 	if [ -z "$userAlreadyExists" ]; then
-		POSTGRES_USER= docker_process_sql --dbname highgo --set user="$POSTGRES_USER" --set password="$POSTGRES_PASSWORD" <<-'EOSQL'
-			SET application_name = securedump;
-        		CREATE ROLE :"user" WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS PASSWORD :'password';
-		EOSQL
+		if [[ "$HG_VERSION" == "hgdb-4.5" ]]; then
+			echo "Detected specific version $HG_VERSION, using set_secure_param instead of securedump"
+			psql highgo syssso <<-"EOF"
+				SELECT set_secure_param('hg_sepv4','dyn_off');
+			EOF
+			POSTGRES_USER= docker_process_sql --dbname highgo --set user="$POSTGRES_USER" --set password="$POSTGRES_PASSWORD" <<-'EOSQL'
+				CREATE ROLE :"user" WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS PASSWORD :'password';
+			EOSQL
+			psql highgo syssso <<-"EOF"
+				SELECT set_secure_param('hg_sepv4','on');
+			EOF
+		else
+			echo "Executing default user setup flow, including SET application_name"
+			POSTGRES_USER= docker_process_sql --dbname highgo --set user="$POSTGRES_USER" --set password="$POSTGRES_PASSWORD" <<-'EOSQL'
+				SET application_name = securedump;
+				CREATE ROLE :"user" WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS PASSWORD :'password';
+			EOSQL
+		fi
 		printf '\n'
 	fi
 }
