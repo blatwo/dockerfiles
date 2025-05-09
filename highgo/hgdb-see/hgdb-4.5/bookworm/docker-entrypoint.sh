@@ -369,6 +369,14 @@ _main() {
 		else
 			## 如果目录不是空，那就加载一下授权，必须要保证容器不会因为授权到期而无法重新利用，这样通过PGDATA下的授权文件hgdb.lic来保障了。
 			hg_load_lic
+			echo "Current HG_VERSION is: $HG_VERSION"
+
+			if [[ "$HG_VERSION" == "hgdb-see-4.5.7"* ]]; then
+				echo "Detected HGDB-SEE edition 4.5.7, skipping license loading..."
+			else
+				echo "Loading license for $HG_VERSION..."
+				hg_load_lic
+			fi
 
 			cat <<-'EOM'
 
