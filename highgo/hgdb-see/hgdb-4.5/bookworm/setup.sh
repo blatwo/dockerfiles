@@ -57,8 +57,17 @@ psql highgo sysdba <<- 'EOF'
 	alter system set archive_command = 'cp %p /home/highgo/hgdb/hgdbbak/archive/%f';
 	alter system set log_line_prefix = '%m [%p] %a %u %d %r %h';
 	alter system set shared_preload_libraries = 'pg_stat_statements';
-	alter system set nls_length_semantics = 'char'; 
+	#alter system set nls_length_semantics = 'char'; 
 EOF
+
+if [[ "$HG_VERSION" != "hgdb-see-4.5.7"* ]]; then
+	echo " not hgdb-see-4.5.7, alter nls_length_semantics"
+  	psql highgo sysdba <<- 'EOF'
+	alter system set nls_length_semantics = 'char';
+EOF
+else
+  echo "hgdb-see-4.5.7, Skipping nls_length_semantics"
+fi
 
 #psql highgo sysdba <<- EOF
 #	SET application_name = securedump;
