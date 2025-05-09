@@ -12,6 +12,9 @@ FROM registry.cn-beijing.aliyuncs.com/annunaki/baseos:bookworm-slim
 # HGDB_HOME：瀚高数据库的安装路径。从4.5.10.3开始固定安装在 /opt/highgo/hgdb-4.5 下；
 # PATH：添加 HGDB_HOME/bin 到 PATH，方便在容器内直接执行数据库命令；
 # PGDATA：存储瀚高数据库数据的目录，要重点注意。
+
+ARG HG_VERSION BRACH_CODE
+
 ENV HIGHGO_HOME=/home/highgo
 ENV HG_VERSION=${HG_VERSION}
 ENV BRACH_CODE=${BRACH_CODE}
@@ -37,7 +40,7 @@ RUN mkdir /docker-entrypoint-initdb.d
 # 添加瀚高数据库程序压缩包
 #ADD ${HG_VERSION}.tar.gz /opt/highgo
 ARG TARGETOS TARGETARCH
-ADD ${HG_VERSION}-${BRACH_CODE}-${TARGETARCH}.tar.gz /opt/highgo
+ADD ${HG_VERSION}-${BRACH_CODE}-${TARGETARCH}.tar.gz /
 
 # 添加 SSL 证书文件并修改权限，因为镜像里没有 openssl 命令，无法创建它们。
 COPY root.crt server.* ${HIGHGO_HOME}/
