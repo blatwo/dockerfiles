@@ -17,20 +17,6 @@ cat > ~/.pgpass <<- EOF
 EOF
 chmod 0600 ~/.pgpass
 
-export PGPASSWORD=${POSTGRES_PASSWORD}
-psql highgo syssso <<- 'EOF'
-	select set_secure_param('hg_macontrol','min');
-	select set_secure_param('hg_rowsecure','off');
-	select set_secure_param('hg_showlogininfo','off');
-	select set_secure_param('hg_clientnoinput','0');
-	select set_secure_param('hg_idcheck.pwdpolicy','low');
-	select set_secure_param('hg_idcheck.pwdvaliduntil','0');
-EOF
-
-psql highgo syssao <<- 'EOF'
-	select set_audit_param('hg_audit','off');
-EOF
-
 # 创建归档目录
 mkdir -p /home/highgo/hgdb/hgdbbak/archive && chown -R highgo:highgo /home/highgo/hgdb && chmod 777 /home/highgo/hgdb
 
@@ -143,3 +129,19 @@ docker_setup_db() {
 
 docker_setup_user
 docker_setup_db
+
+# 前面的安全参数都是临时，无法保证最后生效
+# 为了保证安全和审计参数生效，都放到最后设置，这样重启就会永久保留了
+export PGPASSWORD=${POSTGRES_PASSWORD}
+psql highgo syssso <<- 'EOF'
+	select set_secure_param('hg_macontrol','min');
+	select set_secure_param('hg_rowsecure','off');
+	select set_secure_param('hg_showlogininfo','off');
+	select set_secure_param('hg_clientnoinput','0');
+	select set_secure_param('hg_idcheck.pwdpolicy','low');
+	select set_secure_param('hg_idcheck.pwdvaliduntil','0');
+EOF
+
+psql highgo syssao <<- 'EOF'
+	select set_audit_param('hg_audit','off');
+EOF
