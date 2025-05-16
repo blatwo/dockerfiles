@@ -12,6 +12,9 @@ psql=(psql -dhighgo)
 CREATE DATABASE template_postgis IS_TEMPLATE true;
 EOSQL
 
+# Restart PostgreSQL
+pg_ctl restart
+
 # Load PostGIS into both template_database and $POSTGRES_DB
 for DB in template_postgis "$POSTGRES_DB"; do
     # 判断当前数据库是否为 sysdba，如果是则跳过
