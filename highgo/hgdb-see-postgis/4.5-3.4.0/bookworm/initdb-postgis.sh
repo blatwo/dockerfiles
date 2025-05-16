@@ -43,22 +43,3 @@ for DB in template_postgis "$POSTGRES_DB"; do
 		EOSQL
     fi
 done
-
-		if [[ "$HG_VERSION" == "4.5.10.3" ]]; then
-			echo "Detected specific version $HG_VERSION, using set_secure_param instead of securedump"
-			psql highgo syssso <<-"EOF"
-				SELECT set_secure_param('hg_sepv4','dyn_off');
-			EOF
-			POSTGRES_USER= docker_process_sql --dbname highgo --set user="$POSTGRES_USER" --set password="$POSTGRES_PASSWORD" <<-'EOSQL'
-				CREATE ROLE :"user" WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS PASSWORD :'password';
-			EOSQL
-			psql highgo syssso <<-"EOF"
-				SELECT set_secure_param('hg_sepv4','on');
-			EOF
-		else
-			echo "Executing default user setup flow, including SET application_name"
-			POSTGRES_USER= docker_process_sql --dbname highgo --set user="$POSTGRES_USER" --set password="$POSTGRES_PASSWORD" <<-'EOSQL'
-				SET application_name = securedump;
-				CREATE ROLE :"user" WITH SUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS PASSWORD :'password';
-			EOSQL
-		fi
