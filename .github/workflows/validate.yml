@@ -1,0 +1,16 @@
+name: Validate repository
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfiles and migration roots
+        shell: pwsh
+        run: ./scripts/validate_repository.ps1
