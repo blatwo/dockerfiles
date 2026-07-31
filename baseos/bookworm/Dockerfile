@@ -4,7 +4,8 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM debian:bookworm-slim
+#FROM debian:bookworm-slim
+FROM registry.cn-beijing.aliyuncs.com/annunaki/baseos:debian12-v1
 
 # https://www.postgresql.org/docs/16/app-psql.html#APP-PSQL-META-COMMAND-PSET-PAGER
 # https://github.com/postgres/postgres/blob/REL_16_1/src/include/fe_utils/print.h#L25
@@ -22,7 +23,7 @@ RUN set -ex; \
 # 启动某些进程后，降低权限以增强安全性时非常有用。通过这种方式，可以避免以 root 用户身份运行不必要的服务，
 # 从而降低潜在的安全风险。
 # https://github.com/tianon/gosu/releases
-ENV GOSU_VERSION=1.17
+ENV GOSU_VERSION=1.19
 RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
