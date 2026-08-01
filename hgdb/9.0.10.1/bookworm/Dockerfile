@@ -39,7 +39,7 @@ RUN mkdir /docker-entrypoint-initdb.d
 # 添加瀚高数据库程序压缩包
 #ADD ${HGDB_VERSION}.tar.gz /opt/highgo
 ARG TARGETOS TARGETARCH
-ADD ${HGDB_VERSION}-${BRACH_CODE}-linux-${TARGETARCH}-db.tar /
+ADD ${HGDB_VERSION}-${BRACH_CODE}-linux-${TARGETARCH}-db.tar /opt/highgo
 
 # 添加 SSL 证书文件并修改权限，因为镜像里没有 openssl 命令，无法创建它们。
 COPY root.crt server.* ${HIGHGO_HOME}/
