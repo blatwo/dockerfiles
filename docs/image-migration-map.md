@@ -1,19 +1,24 @@
 # Docker 镜像迁移映射
 
-## Current mapping
+## 已确认的迁移范围
 
-| Old path | Target path |
-| --- | --- |
-| `highgo/hgdb-see` | `hgdb/4.5/see` |
-| `highgo/hgdb-see-postgis` | `hgdb/4.5/see-postgis` |
-| `highgo/hgdb-ee` | `hgdb/6.0/enterprise` |
-| Future HGDB 9.0 images | `hgdb/9.0/` |
+| 历史路径 | 新路径 | 处理方式 |
+| --- | --- | --- |
+| `highgo/hgdb-ee/hgdb-ee-6.0.4` | `hgdb/6.0/enterprise/6.0.4` | 复制，保留旧路径 |
+| `highgo/hgdb-see/hgdb-see-4.5.7` | `hgdb/4.5/see/4.5.7` | 复制，保留旧路径 |
+| `highgo/hgdb-see/hgdb-see-4.5.8` | `hgdb/4.5/see/4.5.8` | 复制，保留旧路径 |
+| `highgo/hgdb-see/hgdb-see-4.5.10` | `hgdb/4.5/see/4.5.10` | 复制，保留旧路径 |
+| `highgo/hgdb-see-postgis/4.5-3.4.0` | `hgdb/4.5/see-postgis/4.5-3.4.0` | 复制，保留旧路径 |
+| `highgo/hgdb-see-postgis/4.5.10-3.4.0` | `hgdb/4.5/see-postgis/4.5.10-3.4.0` | 复制，保留旧路径 |
 
-## Migration strategy
+## 暂不迁移
 
-1. Create target directory structure.
-2. Verify Docker build compatibility.
-3. Migrate images gradually.
-4. Keep old paths during transition.
+- `highgo/hgdb-ee/hgdb-ee-v9-Oracle`
+- `highgo/hgdb-ee/HighGo4.7.5-se`
+- `baseos/`、`basetools/` 和 `ivorysql/`
 
-Do not remove historical paths until migration is complete.
+这些目录的产品版本或兼容关系尚未形成统一模型，先保持原状。
+
+## 兼容规则
+
+`highgo/` 是历史构建入口，迁移完成前不得删除或重命名。新镜像维护和新文档引用优先使用 `hgdb/`。
