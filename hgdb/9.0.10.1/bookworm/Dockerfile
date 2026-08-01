@@ -37,7 +37,6 @@ RUN set -eux; \
 RUN mkdir /docker-entrypoint-initdb.d
 
 # 添加瀚高数据库程序压缩包
-#ADD ${HGDB_VERSION}.tar.gz /opt/highgo
 ARG TARGETOS TARGETARCH
 ADD ${HGDB_VERSION}-${BRACH_CODE}-linux-${TARGETARCH}-db.tar /opt/highgo
 
