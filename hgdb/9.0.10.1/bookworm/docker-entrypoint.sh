@@ -209,7 +209,7 @@ docker_process_sql() {
 		query_runner+=( --dbname "$POSTGRES_DB" )
 	fi
 
-	PGHOST="${PGHOST:-${HIGHGO_HOME:-/home/highgo}}" PGHOSTADDR= "${query_runner[@]}" "$@"
+	PGHOST= PGHOSTADDR= "${query_runner[@]}" "$@"
 }
 
 # create initial database

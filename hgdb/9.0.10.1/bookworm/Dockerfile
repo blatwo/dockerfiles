@@ -20,7 +20,6 @@ ENV BRACH_CODE=${BRACH_CODE}
 ENV HGDB_HOME=/opt/highgo/${HGDB_VERSION}
 ENV PATH=$PATH:${HGDB_HOME}/bin
 ENV PGDATA=${HIGHGO_HOME}/hgdb/data
-ENV PGHOST=${HIGHGO_HOME}
 
 RUN echo "Using HGDB_VERSION=$HGDB_VERSION and BRACH_CODE=$BRACH_CODE"
 
@@ -55,9 +54,7 @@ RUN postgres --version
 # 修改默认配置，监听所有IP，否则宿主机无法访问端口
 RUN set -eux; \
 	sed -ri "s/^#?(listen_addresses)\s*=\s*\S+.*/\1 = '*'/" ${HGDB_HOME}/share/postgresql/postgresql.conf.sample; \
-	sed -ri "s!^#?(unix_socket_directories)\s*=.*!\1 = '${HIGHGO_HOME}'!" ${HGDB_HOME}/share/postgresql/postgresql.conf.sample; \
-	grep -F "listen_addresses = '*'" ${HGDB_HOME}/share/postgresql/postgresql.conf.sample; \
-	grep -F "unix_socket_directories = '${HIGHGO_HOME}'" ${HGDB_HOME}/share/postgresql/postgresql.conf.sample
+	grep -F "listen_addresses = '*'" ${HGDB_HOME}/share/postgresql/postgresql.conf.sample
 
 # 创建数据目录并授权
 RUN install --verbose --directory --owner highgo --group highgo --mode 3777 "${HIGHGO_HOME}"
