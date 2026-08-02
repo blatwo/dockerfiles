@@ -32,7 +32,7 @@ _is_sourced() {
 		&& [ "${FUNCNAME[1]}" = 'source' ]
 }
 
-# used to create initial postgres directories and if run as root, ensure ownership to the "postgres" user
+# used to create initial database directories and if run as root, ensure ownership by "highgo"
 docker_create_db_directories() {
 	local user; user="$(id -u)"
 
@@ -48,15 +48,15 @@ docker_create_db_directories() {
 	if [ -n "${POSTGRES_INITDB_WALDIR:-}" ]; then
 		mkdir -p "$POSTGRES_INITDB_WALDIR"
 		if [ "$user" = '0' ]; then
-			find "$POSTGRES_INITDB_WALDIR" \! -user postgres -exec chown postgres '{}' +
+			find "$POSTGRES_INITDB_WALDIR" \! -user highgo -exec chown highgo '{}' +
 		fi
 		chmod 700 "$POSTGRES_INITDB_WALDIR"
 	fi
 
 	# allow the container to be started with `--user`
 	if [ "$user" = '0' ]; then
-		find "$PGDATA" \! -user postgres -exec chown postgres '{}' +
-		find /var/run/postgresql \! -user postgres -exec chown postgres '{}' +
+		find "$PGDATA" \! -user highgo -exec chown highgo '{}' +
+		find /var/run/postgresql \! -user highgo -exec chown highgo '{}' +
 	fi
 }
 
@@ -77,8 +77,8 @@ docker_init_database_dir() {
 				NSS_WRAPPER_GROUP="$(mktemp)"
 				export LD_PRELOAD="$wrapper" NSS_WRAPPER_PASSWD NSS_WRAPPER_GROUP
 				local gid; gid="$(id -g)"
-				printf 'postgres:x:%s:%s:PostgreSQL:%s:/bin/false\n' "$uid" "$gid" "$PGDATA" > "$NSS_WRAPPER_PASSWD"
-				printf 'postgres:x:%s:\n' "$gid" > "$NSS_WRAPPER_GROUP"
+				printf 'highgo:x:%s:%s:HighGoDatabase:%s:/bin/false\n' "$uid" "$gid" "$PGDATA" > "$NSS_WRAPPER_PASSWD"
+				printf 'highgo:x:%s:\n' "$gid" > "$NSS_WRAPPER_GROUP"
 				break
 			fi
 		done
@@ -217,12 +217,12 @@ docker_process_sql() {
 docker_setup_db() {
 	local dbAlreadyExists
 	dbAlreadyExists="$(
-		POSTGRES_DB= docker_process_sql --dbname postgres --set db="$POSTGRES_DB" --tuples-only <<-'EOSQL'
+		POSTGRES_DB= docker_process_sql --dbname highgo --set db="$POSTGRES_DB" --tuples-only <<-'EOSQL'
 			SELECT 1 FROM pg_database WHERE datname = :'db' ;
 		EOSQL
 	)"
 	if [ -z "$dbAlreadyExists" ]; then
-		POSTGRES_DB= docker_process_sql --dbname postgres --set db="$POSTGRES_DB" <<-'EOSQL'
+		POSTGRES_DB= docker_process_sql --dbname highgo --set db="$POSTGRES_DB" <<-'EOSQL'
 			CREATE DATABASE :"db" ;
 		EOSQL
 		printf '\n'
@@ -234,7 +234,7 @@ docker_setup_db() {
 docker_setup_env() {
 	file_env 'POSTGRES_PASSWORD'
 
-	file_env 'POSTGRES_USER' 'postgres'
+	file_env 'POSTGRES_USER' 'highgo'
 	file_env 'POSTGRES_DB' "$POSTGRES_USER"
 	file_env 'POSTGRES_INITDB_ARGS'
 	: "${POSTGRES_HOST_AUTH_METHOD:=}"
@@ -294,7 +294,7 @@ docker_temp_server_start() {
 
 	# internal start of server in order to allow setup using psql client
 	# does not listen on external TCP/IP and waits until start finishes
-	set -- "$@" -c listen_addresses='' -p "${PGPORT:-5432}"
+	set -- "$@" -c listen_addresses='' -p "${PGPORT:-5866}"
 
 	# unset NOTIFY_SOCKET so the temporary server doesn't prematurely notify
 	# any process supervisor.
@@ -307,7 +307,7 @@ docker_temp_server_start() {
 
 # stop postgresql server after done setting up user and running scripts
 docker_temp_server_stop() {
-	PGUSER="${PGUSER:-postgres}" \
+	PGUSER="${PGUSER:-highgo}" \
 	pg_ctl -D "$PGDATA" -m fast -w stop
 }
 
@@ -339,8 +339,8 @@ _main() {
 		# setup data directories and permissions (when run as root)
 		docker_create_db_directories
 		if [ "$(id -u)" = '0' ]; then
-			# then restart script as postgres user
-			exec gosu postgres "$BASH_SOURCE" "$@"
+			# then restart script as highgo user
+			exec gosu highgo "$BASH_SOURCE" "$@"
 		fi
 
 		# only run initialization on an empty data directory
